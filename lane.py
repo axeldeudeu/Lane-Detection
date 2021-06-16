@@ -55,3 +55,11 @@ class LaneDetection:
         preprocessed_img = cv2.bitwise_and(warped, warped, mask=mask).astype(np.uint8)
 
         return mask
+
+    # function to generate histogram
+    def generateHistogram(self, mask):
+        hist = np.sum(mask, axis=0)
+        midpoint = hist.shape[0]//2
+        left_lane_ix = int(np.argmax(hist[:midpoint]))
+        right_lane_ix = np.argmax(hist[midpoint:]) + midpoint
+        return hist, left_lane_ix, right_lane_ix
