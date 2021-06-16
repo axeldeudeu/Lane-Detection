@@ -213,3 +213,98 @@ class LaneDetection:
         turning = self.predict_turn(slope_center)
 
         return result, sliding, turning
+
+
+def dataSet2(args):
+    lane = LaneDetection()
+    src_pts = np.float32([(200,580),(600,395),(740,395),(1080,580)])
+    dst_pts = np.float32([(0,300),(0,0),(300,0),(300,300)])
+
+    file = args['full_path']
+    dataset = args['set']
+    K, D = lane.readCameraParameters(dataset)
+    cap = cv2.VideoCapture(file)
+
+    video = cv2.VideoWriter('Lane_Detection_video_challenge.avi',cv2.VideoWriter_fourcc(*'XVID'), 20,(1280,600))
+
+    while (cap.isOpened()):
+        ret, frame = cap.read()
+        if ret:
+            # undistort the image
+            frame = cv2.undistort(frame,K,D,None,K)
+            image = cv2.resize(frame, (1280, 600))
+            # warp the image
+            warped, H = lane.getWarpedImage(image, src_pts, dst_pts)
+            # get the color threshold mask
+            mask = lane.doColorThresholding(warped)
+            # get the histogram of lane pixels
+            hist, left_lane_ix, right_lane_ix = lane.generateHistogram(mask)
+            # get the lanes
+            result, sliding, turning = lane.getLanes(mask, left_lane_ix, right_lane_ix)
+
+            size = (image.shape[:2][1], image.shape[:2][0])
+            # reverse warp and meld the images
+            reverse_warp = cv2.warpPerspective(result, np.linalg.inv(H), size)
+            final = cv2.addWeighted(image, 1, reverse_warp, 1, 0)
+            #final[:300,980:,:] = sliding
+
+            cv2.putText(final, turning, (450, 50), cv2.FONT_HERSHEY_COMPLEX, 1, (0,0,255), 2)
+
+            cv2.imshow('Final', final)
+
+            video.write(final)
+
+            if cv2.waitKey(25) & 0XFF == ord('q'):
+                break
+        else:
+            break
+
+    cv2.destroyAllWindows()
+
+    video.release()
+
+def dataSet1(args):
+    lane = LaneDetection()
+    src_pts = np.float32([(120,499),(500,290),(700,290),(950,499)])
+    dst_pts = np.float32([(0,300),(0,0),(300,0),(300,300)])
+
+    video = cv2.VideoWriter('LaneDetection_DataSet_1.avi',cv2.VideoWriter_fourcc(*'XVID'), 10,(1280,500))
+    folder = args['full_path']
+    if (not folder[-1] == '/'):
+        folder = folder + '/'
+    images = glob.glob(folder +'*')
+    images.sort()
+
+    dataset = args['set']
+    K, D = lane.readCameraParameters(dataset)
+
+    for path in images:
+            image = cv2.imread(path)
+            # undistort the image
+            image = cv2.undistort(image,K,D,None,K)
+            image = cv2.resize(image, (1280, 500))
+            # warp the image
+            warped, H = lane.getWarpedImage(image, src_pts, dst_pts)
+            # get the color threshold mask
+            mask = lane.doColorThresholding(warped)
+            # get the histogram of lane pixels
+            hist, left_lane_ix, right_lane_ix = lane.generateHistogram(mask)
+            # get the lanes
+            result, sliding, turning = lane.getLanes(mask, left_lane_ix, right_lane_ix)
+
+            size = (image.shape[:2][1], image.shape[:2][0])
+            # reverse warp and meld the images
+            reverse_warp = cv2.warpPerspective(result, np.linalg.inv(H), size)
+            final = cv2.addWeighted(image, 1, reverse_warp, 1, 0)
+            #final[:300,980:,:] = sliding
+
+            cv2.putText(final, turning, (450, 50), cv2.FONT_HERSHEY_COMPLEX, 1, (0,0,255), 2)
+
+            cv2.imshow('Final', final)
+            video.write(final)
+
+            if cv2.waitKey(25) & 0XFF == ord('q'):
+                break
+
+    cv2.destroyAllWindows()
+    video.release()
