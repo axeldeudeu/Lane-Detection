@@ -7,6 +7,7 @@ Lane Detection for Self Driving Cars
 <p align="center">
 <img src="data/test_video.gif"/>
 </p>
+
 ### Steps to run
 	with images: end folder path containing images needs to be given
 	pyhton3 lane.py -dataset 1 -path /home/siddharth/Downloads/673/Project2/data/data_1/data/
@@ -33,6 +34,7 @@ Lane Detection for Self Driving Cars
 <p align="center">
 <img src="data/Night_Drive_Gamma_Correction.gif"/>
 </p>
+
 ### Steps to run
 	Please ensure that the video file is in the present working directory or provide the path argument having complete video file path
 	python3 problem1.py -method  histogram
