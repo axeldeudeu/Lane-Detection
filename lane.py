@@ -21,3 +21,14 @@ class LaneDetection:
             K = np.array([[1.15422732e+03, 0.00000000e+00, 6.71627794e+02], [0.00000000e+00, 1.14818221e+03, 3.86046312e+02],[0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
             D = np.array([[-2.42565104e-01, -4.77893070e-02, -1.31388084e-03, -8.79107779e-05, 2.20573263e-02]])
         return K, D
+
+    # function to undistort the image
+    def undistortImage(self, image, K, D):
+        return cv2.undistort(image,K,D,None,K)
+
+    # function to get the warped image
+    def getWarpedImage(self, image, src, dst):
+        H = cv2.getPerspectiveTransform(src, dst)
+        warped = cv2.warpPerspective(image, H, (300, 300))
+        return warped, H
+
