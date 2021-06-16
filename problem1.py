@@ -18,3 +18,19 @@ def histogram(image):
 def cumulativeSum(hist):
     # calculate the cumulative sum
     return [sum(hist[:i+1]) for i in range(len(hist))]
+
+def histogramEqualization(image):
+    #calculate Histogram
+    hist = histogram(image)
+    #find the cdf function
+    cdf = np.array(cumulativeSum(hist))
+    #multiply cdf with 255
+    transfer = np.uint8(255 * cdf)
+    k, l = image.shape
+    final = np.zeros_like(image)
+    # construct the final histogram equalization image
+    for i in range(0, k):
+        for j in range(0, l):
+            final[i, j] = transfer[image[i, j]]
+    return final
+
