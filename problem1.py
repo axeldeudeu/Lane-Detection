@@ -14,3 +14,7 @@ def histogram(image):
             #for every intensity add the count
             hist[image[i, j]] += 1
     return np.array(hist)/(m*n)
+
+def cumulativeSum(hist):
+    # calculate the cumulative sum
+    return [sum(hist[:i+1]) for i in range(len(hist))]
