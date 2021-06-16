@@ -45,3 +45,49 @@ def gamma_correction(img,gamma):
     corrected = cv2.LUT(img,lookup)
     return corrected
 
+
+def main(args):
+
+    video = cv2.VideoWriter('Night_Drive_Correction.avi',cv2.VideoWriter_fourcc(*'XVID'), 20,(1024,600))
+    cap = cv2.VideoCapture(args['file'])
+    method = args['method']
+
+    while (cap.isOpened()):
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frame = cv2.resize(frame, (1024,600))
+        #split in b,g,r
+        b,g,r= cv2.split(frame)
+
+        if (method == 'histogram'):
+            #compute histogram equalization for each channel
+            b1 = histogramEqualization(b)
+            g1 = histogramEqualization(g)
+            r1 = histogramEqualization(r)
+            #merge the channels
+            final = cv2.merge((b1,g1,r1))
+        elif (method == 'gamma'):
+            final = gamma_correction(frame, 1.8)
+        else:
+            print('invalid method ; exit')
+            return
+
+        cv2.imshow('Final', final)
+        video.write(final)
+        if cv2.waitKey(25) & 0XFF == ord('q'):
+            break
+
+    cv2.destroyAllWindows()
+    video.release()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-method", "--method", required=True, help="Input: histogram or gamma", type=str)
+    parser.add_argument("-path", "--file", required=False, help="video path", default='Night Drive - 2689.mp4', type=str)
+    args = vars(parser.parse_args())
+    if (not os.path.exists(args['file'])):
+        print('File does not exist. Re run with correct path or place file in current directory and run')
+        exit()
+
+    main(args)
