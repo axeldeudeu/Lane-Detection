@@ -308,3 +308,20 @@ def dataSet1(args):
 
     cv2.destroyAllWindows()
     video.release()
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-dataset", "--set", required=False, help="Input 1 for Regular video OR 2 for Challenge video", default='2', type=str)
+    parser.add_argument("-path", "--full_path", required=False, help="working directory of image data set or video", default='challenge_video.mp4', type=str)
+    args = vars(parser.parse_args())
+
+    if (not os.path.exists(args['full_path'])):
+        print('Path does not exist ; Re run and enter correct path as per README')
+        exit()
+
+    if (args['set'] == '1'):
+        dataSet1(args)
+    elif(args['set'] == '2'):
+        dataSet2(args)
+
