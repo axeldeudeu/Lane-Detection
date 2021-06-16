@@ -34,3 +34,14 @@ def histogramEqualization(image):
             final[i, j] = transfer[image[i, j]]
     return final
 
+
+def gamma_correction(img,gamma):
+    gamma = 1/gamma
+    lT =[]
+    for i in np.arange(0,256).astype(np.uint8):
+        lT.append(np.uint8(((i/255)**gamma)*255))
+    lookup = np.array(lT)
+    #Creating the lookup table to find values
+    corrected = cv2.LUT(img,lookup)
+    return corrected
+
