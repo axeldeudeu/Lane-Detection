@@ -129,3 +129,12 @@ class LaneDetection:
         cv2.fillPoly(result, np.int_([pts]),(0,0,255))
 
         return result, point_y, left_fit, right_fit, slope_center
+
+    # function to predict turn
+    def predict_turn(self, center_line_slope):
+        if (center_line_slope > 160.0):
+            return 'Prediction: Right Turn'
+        if (center_line_slope >= 130.0 and center_line_slope <= 160.0):
+            return 'Prediction: Go straight'
+        if (center_line_slope < 130.0):
+            return 'Prediction: Left Turn'
