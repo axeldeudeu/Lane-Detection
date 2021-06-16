@@ -138,3 +138,78 @@ class LaneDetection:
             return 'Prediction: Go straight'
         if (center_line_slope < 130.0):
             return 'Prediction: Left Turn'
+
+    # function to get the lanes
+    def getLanes(self, mask, left_lane_ix, right_lane_ix):
+        sliding = np.dstack((mask, mask, mask))
+        margin = 30
+        windows = 10
+        min_pix = 50
+        mean_left = left_lane_ix
+        mean_right = right_lane_ix
+
+        window_height = int(mask.shape[0]/windows)
+
+        # calculate the indices of non zero pixels
+        ones_in_mask = mask.nonzero()
+        ones_y = np.array(ones_in_mask[0])
+        ones_x = np.array(ones_in_mask[1])
+
+        # left lane
+        left_border_left = mean_left - margin
+        left_border_right = mean_left + margin
+
+        # right lane
+        right_border_left = mean_right - margin
+        right_border_right = mean_right + margin
+
+        left_lane_list = []
+        right_lane_list = []
+
+        for window in range(windows):
+            # top and botton margin
+            top_border = mask.shape[0] - (window)*window_height
+            bottom_border = mask.shape[0] - (window+1)*window_height
+
+            # check if the windows has the "ones" pixels, if yes add those to pixel list
+            left_lane = (((ones_y >= bottom_border) & (ones_y < top_border) & 
+                    (ones_x >= left_border_left) & (ones_x < left_border_right)).nonzero())[0]
+
+            right_lane = (((ones_y >= bottom_border) & (ones_y < top_border) & 
+                    (ones_x >= right_border_left) & (ones_x < right_border_right)).nonzero())[0]
+
+            left_lane_list.append(left_lane)
+            right_lane_list.append(right_lane)
+
+            # if the left and right lane pixels are above threshold, then re-center the window and update the borders
+            if (len(left_lane) > min_pix):
+                mean_left = np.int(np.mean(ones_x[left_lane]))
+                left_border_left = mean_left - margin
+                left_border_right = mean_left + margin
+                #print('update left lane mean to ' + str(mean_left))
+
+            if (len(right_lane) > min_pix):
+                mean_right = np.int(np.mean(ones_x[right_lane]))
+                right_border_left = mean_right - margin
+                right_border_right = mean_right + margin
+                #print('update right lane mean to ' + str(mean_right))
+
+            # draw the window
+            cv2.rectangle(sliding,(left_border_left,bottom_border),(left_border_right,top_border),(0,255,0), 1) 
+            cv2.rectangle(sliding,(right_border_left,bottom_border),(right_border_right,top_border),(0,0,255), 1)
+
+        left_lane_list = np.concatenate(left_lane_list)
+        right_lane_list = np.concatenate(right_lane_list)
+
+        # store the left and right lane Non-zero(white) pixels
+        left_lane_x = ones_x[left_lane_list]
+        left_lane_y = ones_y[left_lane_list]
+
+        right_lane_x = ones_x[right_lane_list]
+        right_lane_y = ones_y[right_lane_list]
+
+        result, point_y, left_fit, right_fit, slope_center = self.fitPolynomial(mask, left_lane_list, right_lane_list, ones_x, ones_y, left_lane_x, left_lane_y, right_lane_x, right_lane_y)
+
+        turning = self.predict_turn(slope_center)
+
+        return result, sliding, turning
