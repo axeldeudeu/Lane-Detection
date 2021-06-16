@@ -63,3 +63,69 @@ class LaneDetection:
         left_lane_ix = int(np.argmax(hist[:midpoint]))
         right_lane_ix = np.argmax(hist[midpoint:]) + midpoint
         return hist, left_lane_ix, right_lane_ix
+
+    # function to fit a polynomial
+    def fitPolynomial(self, mask, left_lane_list, right_lane_list, ones_x, ones_y, left_lane_x, left_lane_y, right_lane_x, right_lane_y):
+        margin = 5
+        try:
+            left_fit = np.polyfit(left_lane_y, left_lane_x, 2)
+            right_fit = np.polyfit(right_lane_y, right_lane_x, 2)
+            # check for good coefficients and save this if good configuration
+            if(self.best_left_fit is not None and self.best_right_fit is not None):
+                if (abs(left_fit[1]-self.best_left_fit[1]) > 1.5):
+                    #print('Take the last well known left fit')
+                    left_fit = self.best_left_fit
+                if (abs(right_fit[1]-self.best_left_fit[1]) > 1.5):
+                    #print('Take the last well known right fit')
+                    right_fit = self.best_right_fit
+        except:
+            #print('Error in fitting polynomial ; think of some method to solve and fit this')
+            left_fit, right_fit = self.best_left_fit, self.best_right_fit
+            #print(left_fit, right_fit)
+
+        self.best_left_fit, self.best_right_fit = left_fit, right_fit
+
+        # polynomial equation
+        point_y = np.linspace(0, mask.shape[0]-1, mask.shape[0])
+        left_line_x = left_fit[0]*(point_y**2) + left_fit[1]*(point_y) + left_fit[2]
+        right_line_x = right_fit[0]*(point_y**2) + right_fit[1]*(point_y) + right_fit[2]
+
+        # center line equation
+        center_line_x = (left_line_x+right_line_x)/2
+        center_fit = np.polyfit(point_y, center_line_x, 1)
+        slope_center = center_fit[1]
+
+        out_img = np.dstack((mask, mask, mask))
+        window_img = np.zeros_like(out_img)
+
+        # color mofication of non-zero pixels
+        out_img[ones_y[left_lane_list], ones_x[left_lane_list]] = [255, 0, 0]
+        out_img[ones_y[right_lane_list], ones_x[right_lane_list]] = [0, 255, 0]
+
+        # Stack individual lane points
+        left_line_window1 = np.array([np.transpose(np.vstack([left_line_x-margin, point_y]))])
+        left_line_window2 = np.array([np.flipud(np.transpose(np.vstack([left_line_x+margin, point_y])))])
+        left_line_pts = np.hstack((left_line_window1, left_line_window2))
+
+        right_line_window1 = np.array([np.transpose(np.vstack([right_line_x-margin, point_y]))])
+        right_line_window2 = np.array([np.flipud(np.transpose(np.vstack([right_line_x+margin, point_y])))])
+        right_line_pts = np.hstack((right_line_window1, right_line_window2))
+
+        # Draw the lane onto the warped blank image
+        cv2.fillPoly(window_img, np.int_([left_line_pts]), (255,0,0))
+        cv2.fillPoly(window_img, np.int_([right_line_pts]), (0,255,0))
+        result = cv2.addWeighted(out_img, 1, window_img, 1, 0)
+
+        # Stack the lane points together
+        pts_left = np.array([np.transpose(np.vstack([left_line_x, point_y]))])
+        pts_right = np.array([np.flipud(np.transpose(np.vstack([right_line_x, point_y])))])
+        pts = np.hstack((pts_left, pts_right))
+
+        #draw center line
+        pts_center = np.array([np.transpose(np.vstack([center_line_x, point_y]))])
+        cv2.polylines(result, np.int32([pts_center]), isClosed=False, color=(102,2,10), thickness=2)
+
+        # Fill the lane polynomial
+        cv2.fillPoly(result, np.int_([pts]),(0,0,255))
+
+        return result, point_y, left_fit, right_fit, slope_center
